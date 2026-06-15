@@ -58,6 +58,19 @@
                 </div>
 
                 <div class="sidebar-section">
+                    <div class="sidebar-section-title">Metric AI API Key</div>
+                    <input
+                        type="password"
+                        id="metricApiKeyInput"
+                        class="sidebar-input"
+                        placeholder="Leave empty to use server default"
+                        autocomplete="off"
+                        spellcheck="false"
+                    />
+                    <p class="sidebar-hint">Optional. Uses server <code>.env</code> key when blank.</p>
+                </div>
+
+                <div class="sidebar-section">
                     <div class="sidebar-section-title">Provider</div>
                     <div class="sidebar-provider">
                         <select id="providerSelect" class="sidebar-select">

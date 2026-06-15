@@ -24,8 +24,14 @@ def _get_http_client() -> httpx.Client:
     return _http_client
 
 
-def _send_event(payload: dict):
-    api_key = os.getenv("METRIC_AI_API_KEY", "")
+def _resolve_api_key(api_key: Optional[str] = None) -> str:
+    if api_key and api_key.strip():
+        return api_key.strip()
+    return os.getenv("METRIC_AI_API_KEY", "")
+
+
+def _send_event(payload: dict, api_key: Optional[str] = None):
+    api_key = _resolve_api_key(api_key)
     if not api_key:
         return
     idempotency_key = str(uuid.uuid4())
@@ -44,8 +50,9 @@ def _send_event(payload: dict):
         _LOG.debug("MetricAI track error: %s", e)
 
 
-def _track_async(payload: dict):
-    t = threading.Thread(target=_send_event, args=(payload,), daemon=True)
+def _track_async(payload: dict, api_key: Optional[str] = None):
+    resolved_key = _resolve_api_key(api_key)
+    t = threading.Thread(target=_send_event, args=(payload, resolved_key), daemon=True)
     t.start()
 
 
@@ -67,6 +74,7 @@ def track_agent_execution(
     execution_time: float,
     provider: str = "openai",
     model: str = "gpt-4o-mini",
+    metric_ai_api_key: Optional[str] = None,
 ):
     payload = {
         "event_type": "turn",
@@ -81,7 +89,7 @@ def track_agent_execution(
         "agent_name": agent_name,
         "query": query[:200],
     }
-    _track_async(payload)
+    _track_async(payload, api_key=metric_ai_api_key)
 
 
 AGENT_ID_MAP = {
@@ -100,6 +108,7 @@ def track_workflow(
     total_execution_time: float,
     provider: str = "openai",
     model: str = "gpt-4o-mini",
+    metric_ai_api_key: Optional[str] = None,
 ):
     agent_id = AGENT_ID_MAP.get(routed_agent, routed_agent)
     payload = {
@@ -115,4 +124,4 @@ def track_workflow(
         "workflow": "routing",
         "selected_agent": routed_agent,
     }
-    _track_async(payload)
+    _track_async(payload, api_key=metric_ai_api_key)

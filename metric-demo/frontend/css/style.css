@@ -167,6 +167,22 @@ body {
 }
 .sidebar-select:focus { outline: none; border-color: var(--accent); }
 
+.sidebar-input {
+    width: 100%; padding: 0.5rem 0.65rem; background: var(--bg-tertiary);
+    border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text-primary); font-size: 0.78rem; font-family: var(--mono);
+    box-sizing: border-box;
+}
+.sidebar-input:focus { outline: none; border-color: var(--accent); }
+.sidebar-input::placeholder { color: var(--text-muted); font-family: var(--font); }
+
+.sidebar-hint {
+    margin: 0.35rem 0 0; font-size: 0.65rem; color: var(--text-muted); line-height: 1.4;
+}
+.sidebar-hint code {
+    font-family: var(--mono); font-size: 0.62rem; color: var(--text-secondary);
+}
+
 .sidebar-agent {
     display: flex; align-items: center; gap: 0.6rem;
     padding: 0.6rem 0.75rem; background: var(--bg-tertiary); border-radius: 10px;

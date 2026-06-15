@@ -46,6 +46,7 @@ class ChatRequest(BaseModel):
     query: str
     provider: Optional[str] = "openai"
     model: Optional[str] = None
+    metric_ai_api_key: Optional[str] = None
 
 
 @app.post("/api/signup")
@@ -122,6 +123,7 @@ def chat(request: ChatRequest):
         query=request.query,
         provider=request.provider or "openai",
         model=request.model,
+        metric_ai_api_key=request.metric_ai_api_key,
     )
     return result
 
@@ -141,6 +143,7 @@ async def chat_stream(request: ChatRequest):
             query=request.query,
             provider=provider,
             model=model,
+            metric_ai_api_key=request.metric_ai_api_key,
         )
 
         meta = json.dumps({

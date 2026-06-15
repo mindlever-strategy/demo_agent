@@ -91,6 +91,7 @@ def _execute_agent(agent_key: str, execute_fn, state: AgentState) -> Dict:
         execution_time=execution_time,
         provider=provider,
         model=used_model,
+        metric_ai_api_key=state.get("metric_ai_api_key"),
     )
     return {"response": response}
 
@@ -155,7 +156,7 @@ def build_graph():
 agent_graph = build_graph()
 
 
-def run_workflow(user_id: str, session_id: str, query: str, provider: str = "openai", model: str = None) -> Dict:
+def run_workflow(user_id: str, session_id: str, query: str, provider: str = "openai", model: str = None, metric_ai_api_key: str = None) -> Dict:
     from providers import PROVIDERS
     start = time.time()
     trace_id = f"trc_{uuid.uuid4().hex[:8]}"
@@ -172,6 +173,7 @@ def run_workflow(user_id: str, session_id: str, query: str, provider: str = "ope
         "provider": provider,
         "model": used_model,
         "trace_id": trace_id,
+        "metric_ai_api_key": metric_ai_api_key,
     }
 
     result = agent_graph.invoke(initial_state)
@@ -185,6 +187,7 @@ def run_workflow(user_id: str, session_id: str, query: str, provider: str = "ope
         total_execution_time=total_time,
         provider=provider,
         model=used_model,
+        metric_ai_api_key=metric_ai_api_key,
     )
 
     return {
@@ -208,7 +211,7 @@ AGENT_STREAM_FNS = {
 }
 
 
-def stream_workflow(user_id: str, session_id: str, query: str, provider: str = "openai", model: str = None):
+def stream_workflow(user_id: str, session_id: str, query: str, provider: str = "openai", model: str = None, metric_ai_api_key: str = None):
     """Route the query then return (agent_name, agent_id, token_generator)."""
     from providers import PROVIDERS
     provider_config = PROVIDERS.get(provider, PROVIDERS["openai"])
@@ -257,6 +260,7 @@ def stream_workflow(user_id: str, session_id: str, query: str, provider: str = "
             execution_time=execution_time,
             provider=provider,
             model=used_model,
+            metric_ai_api_key=metric_ai_api_key,
         )
 
         track_workflow(
@@ -267,6 +271,7 @@ def stream_workflow(user_id: str, session_id: str, query: str, provider: str = "
             total_execution_time=execution_time,
             provider=provider,
             model=used_model,
+            metric_ai_api_key=metric_ai_api_key,
         )
 
     return agent_name, agent_id, token_generator()

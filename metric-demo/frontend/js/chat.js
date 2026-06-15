@@ -39,6 +39,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const sidebar = document.getElementById("sidebar");
     const sidebarToggleBtn = document.getElementById("sidebarToggleBtn");
     const sidebarCloseBtn = document.getElementById("sidebarCloseBtn");
+    const metricApiKeyInput = document.getElementById("metricApiKeyInput");
 
     // Both side panels start open
     tracePanel.classList.add("open");
@@ -50,6 +51,17 @@ document.addEventListener("DOMContentLoaded", () => {
     updateModelOptions(savedProvider);
     modelSelect.value = savedModel;
     updateModelBadge();
+
+    const savedApiKey = sessionStorage.getItem("metricAiApiKey") || "";
+    metricApiKeyInput.value = savedApiKey;
+    metricApiKeyInput.addEventListener("input", () => {
+        const key = metricApiKeyInput.value.trim();
+        if (key) {
+            sessionStorage.setItem("metricAiApiKey", key);
+        } else {
+            sessionStorage.removeItem("metricAiApiKey");
+        }
+    });
 
     // Sidebar toggle
     sidebarToggleBtn.addEventListener("click", () => {
@@ -100,6 +112,7 @@ document.addEventListener("DOMContentLoaded", () => {
         sessionStorage.removeItem("user");
         sessionStorage.removeItem("selectedProvider");
         sessionStorage.removeItem("selectedModel");
+        sessionStorage.removeItem("metricAiApiKey");
         window.location.href = "login.html";
     });
 
@@ -135,6 +148,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const provider = providerSelect.value;
         const model = modelSelect.value;
+        const metricAiApiKey = metricApiKeyInput.value.trim();
         const streamBubble = appendStreamingMessage();
 
         try {
@@ -147,6 +161,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     query: query,
                     provider: provider,
                     model: model,
+                    ...(metricAiApiKey ? { metric_ai_api_key: metricAiApiKey } : {}),
                 }),
             });
 
@@ -200,6 +215,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (metaData) {
                 setAgentState("active", metaData.agent, metaData.agent_id, "Responded");
             }
+            loadTraces();
         } catch (err) {
             finalizeStreamingMessage(streamBubble, "Connection error. Is the server running?", null);
             setAgentState("idle", "Error", "", "");
