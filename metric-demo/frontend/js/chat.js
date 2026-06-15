@@ -40,8 +40,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const sidebarToggleBtn = document.getElementById("sidebarToggleBtn");
     const sidebarCloseBtn = document.getElementById("sidebarCloseBtn");
 
-    // Sidebar starts hidden
-    sidebar.classList.add("hidden");
+    // Both side panels start open
+    tracePanel.classList.add("open");
+    loadTraces();
 
     const savedProvider = sessionStorage.getItem("selectedProvider") || "openai";
     const savedModel = sessionStorage.getItem("selectedModel") || "gpt-4o-mini";
