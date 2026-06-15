@@ -17,6 +17,7 @@ load_dotenv(Path(__file__).parent.parent / ".env")
 from graph import run_workflow, stream_workflow
 from metric_ai_wrapper import register_user, register_session
 from providers import get_available_providers
+from storage import load_json, save_json
 
 app = FastAPI(title="Metric AI Agent Demo")
 
@@ -27,24 +28,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-MEMORY_DIR = Path(__file__).parent / "memory"
-
-
-def load_json(filename: str):
-    filepath = MEMORY_DIR / filename
-    try:
-        with open(filepath, "r") as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return []
-
-
-def save_json(filename: str, data):
-    filepath = MEMORY_DIR / filename
-    with open(filepath, "w") as f:
-        json.dump(data, f, indent=2)
-
 
 class LoginRequest(BaseModel):
     email: str

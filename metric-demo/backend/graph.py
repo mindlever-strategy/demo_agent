@@ -15,8 +15,7 @@ from agents.reporting import execute as reporting_execute, stream_execute as rep
 from agents.code import execute as code_execute, stream_execute as code_stream
 from agents.creative import execute as creative_execute, stream_execute as creative_stream
 from metric_ai_wrapper import track_agent_execution, track_workflow
-
-MEMORY_DIR = Path(__file__).parent / "memory"
+from storage import load_json, save_json
 
 AGENT_DISPLAY_NAMES = {
     "finance_agent": "Finance Agent",
@@ -36,13 +35,9 @@ AGENT_IDS = {
 
 
 def save_trace(trace: dict):
-    traces_file = MEMORY_DIR / "traces.json"
-    try:
-        traces = json.loads(traces_file.read_text())
-    except (FileNotFoundError, json.JSONDecodeError):
-        traces = []
+    traces = load_json("traces.json")
     traces.append(trace)
-    traces_file.write_text(json.dumps(traces, indent=2))
+    save_json("traces.json", traces)
 
 
 def supervisor_node(state: AgentState) -> Dict:

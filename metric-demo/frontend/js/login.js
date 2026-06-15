@@ -45,8 +45,14 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             if (!res.ok) {
-                const data = await res.json();
-                errorEl.textContent = data.detail || "Login failed.";
+                let message = "Login failed.";
+                try {
+                    const data = await res.json();
+                    message = data.detail || message;
+                } catch {
+                    message = `Server error (${res.status}). Try again in a moment.`;
+                }
+                errorEl.textContent = message;
                 btn.textContent = "Login";
                 btn.disabled = false;
                 return;
