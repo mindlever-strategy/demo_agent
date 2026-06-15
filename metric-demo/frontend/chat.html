@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metric AI Agent Demo - Chat</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' rx='10' fill='%23c4a24a'/><path d='M12 28V18L17 22V28M17 28V14L23 18V28M23 28V12L29 16V28' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+</head>
+<body class="chat-page">
+    <div class="chat-layout">
+        <!-- Sidebar (hidden by default, toggleable) -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-top">
+                <button class="sidebar-close-btn" id="sidebarCloseBtn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+                </button>
+                <div class="sidebar-brand">
+                    <svg width="24" height="24" viewBox="0 0 40 40" fill="none">
+                        <rect width="40" height="40" rx="10" fill="#c4a24a"/>
+                        <path d="M12 28V18L17 22V28M17 28V14L23 18V28M23 28V12L29 16V28" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span>Metric AI</span>
+                </div>
+            </div>
+
+            <div class="sidebar-content">
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">User</div>
+                    <div class="sidebar-info-grid">
+                        <div class="sidebar-info-item">
+                            <span class="sidebar-info-label">Name</span>
+                            <span class="sidebar-info-value" id="userName">—</span>
+                        </div>
+                        <div class="sidebar-info-item">
+                            <span class="sidebar-info-label">Role</span>
+                            <span class="sidebar-info-value" id="userRole">—</span>
+                        </div>
+                        <div class="sidebar-info-item">
+                            <span class="sidebar-info-label">ID</span>
+                            <span class="sidebar-info-value mono" id="userId">—</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">Session</div>
+                    <div class="sidebar-info-grid">
+                        <div class="sidebar-info-item">
+                            <span class="sidebar-info-label">Session ID</span>
+                            <span class="sidebar-info-value mono" id="sessionId">—</span>
+                        </div>
+                        <div class="sidebar-info-item">
+                            <span class="sidebar-info-label">Queries</span>
+                            <span class="sidebar-info-value" id="queryCount">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">Provider</div>
+                    <div class="sidebar-provider">
+                        <select id="providerSelect" class="sidebar-select">
+                            <option value="openai">OpenAI</option>
+                            <option value="anthropic">Anthropic Claude</option>
+                            <option value="gemini">Google Gemini</option>
+                            <option value="grok">xAI Grok</option>
+                        </select>
+                        <select id="modelSelect" class="sidebar-select">
+                            <option value="gpt-4o-mini">gpt-4o-mini</option>
+                            <option value="gpt-4o">gpt-4o</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">Active Agent</div>
+                    <div class="sidebar-agent" id="agentDisplay">
+                        <div class="sidebar-agent-dot" id="agentIndicator"></div>
+                        <div class="sidebar-agent-info">
+                            <div class="sidebar-agent-name" id="agentName">Awaiting query...</div>
+                            <div class="sidebar-agent-id mono" id="agentId">—</div>
+                            <div class="sidebar-agent-status" id="agentStatus"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">
+                        <span>Traces</span>
+                        <a href="https://metricai.co.in" target="_blank" class="sidebar-link">Dashboard →</a>
+                    </div>
+                    <button class="sidebar-btn" id="historyBtn">View Execution History</button>
+                </div>
+            </div>
+
+            <div class="sidebar-bottom">
+                <button class="sidebar-btn sidebar-btn-danger" id="logoutBtn">Logout</button>
+            </div>
+        </aside>
+
+        <!-- Main Chat Area -->
+        <main class="chat-main">
+            <!-- Top bar -->
+            <header class="chat-header">
+                <div class="chat-header-left">
+                    <button class="header-btn" id="sidebarToggleBtn" title="Toggle sidebar">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+                    </button>
+                </div>
+                <div class="chat-header-center">
+                    <div class="model-selector" id="modelBadge">
+                        <span class="model-dot" id="modelDot"></span>
+                        <span class="model-name" id="modelName">GPT-4o mini</span>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                    </div>
+                </div>
+                <div class="chat-header-right">
+                    <button class="header-btn" id="headerHistoryBtn" title="History">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Messages -->
+            <div class="chat-messages" id="chatMessages">
+                <div class="welcome-container">
+                    <div class="welcome-logo">
+                        <svg width="44" height="44" viewBox="0 0 40 40" fill="none">
+                            <rect width="40" height="40" rx="10" fill="#c4a24a"/>
+                            <path d="M12 28V18L17 22V28M17 28V14L23 18V28M23 28V12L29 16V28" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <h1 class="welcome-title">What can I help with?</h1>
+                    <div class="welcome-suggestions">
+                        <button class="suggestion-btn" data-query="Which clients are most profitable this quarter?">
+                            <span class="suggestion-text">Which clients are most profitable?</span>
+                            <svg class="suggestion-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17l9.2-9.2M17 17V7.8H7.8"/></svg>
+                        </button>
+                        <button class="suggestion-btn" data-query="What are the latest market trends in AI?">
+                            <span class="suggestion-text">Latest market trends in AI?</span>
+                            <svg class="suggestion-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17l9.2-9.2M17 17V7.8H7.8"/></svg>
+                        </button>
+                        <button class="suggestion-btn" data-query="Generate an executive summary of Q4 performance.">
+                            <span class="suggestion-text">Generate executive summary</span>
+                            <svg class="suggestion-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17l9.2-9.2M17 17V7.8H7.8"/></svg>
+                        </button>
+                        <button class="suggestion-btn" data-query="Write a Python function to merge two sorted arrays.">
+                            <span class="suggestion-text">Write a merge function in Python</span>
+                            <svg class="suggestion-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17l9.2-9.2M17 17V7.8H7.8"/></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="chat-input-wrapper">
+                <div class="chat-input-container">
+                    <form id="chatForm" class="chat-form">
+                        <textarea id="messageInput" placeholder="Message Metric AI" rows="1" autocomplete="off"></textarea>
+                        <button type="submit" class="send-btn" id="sendBtn" disabled>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L12 22M12 2L5 9M12 2L19 9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+                        </button>
+                    </form>
+                </div>
+                <p class="input-disclaimer">Metric AI may produce inaccurate information. All calls metered via MetricAI.</p>
+            </div>
+        </main>
+
+        <!-- Trace Panel -->
+        <aside class="trace-panel" id="tracePanel">
+            <div class="trace-panel-header">
+                <h3>Execution History</h3>
+                <button class="trace-close-btn" id="closeTraceBtn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="trace-panel-content" id="tracePanelContent">
+                <p class="trace-empty">No traces yet</p>
+            </div>
+        </aside>
+    </div>
+
+    <script src="js/chat.js"></script>
+</body>
+</html>

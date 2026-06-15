@@ -1,0 +1,37 @@
+[
+  {
+    "user_id": "usr_001",
+    "name": "John Doe",
+    "email": "john@company.com",
+    "password": "demo123",
+    "role": "CEO"
+  },
+  {
+    "user_id": "usr_002",
+    "name": "Sarah Chen",
+    "email": "sarah@company.com",
+    "password": "demo123",
+    "role": "Finance Manager"
+  },
+  {
+    "user_id": "usr_003",
+    "name": "Mike Rivera",
+    "email": "mike@company.com",
+    "password": "demo123",
+    "role": "Project Manager"
+  },
+  {
+    "user_id": "usr_d908ed0b",
+    "name": "Test User",
+    "email": "test@example.com",
+    "password": "test123",
+    "role": "User"
+  },
+  {
+    "user_id": "usr_14806a42",
+    "name": "Dixit",
+    "email": "dixit@metricai",
+    "password": "Dixit@0043",
+    "role": "User"
+  }
+]
