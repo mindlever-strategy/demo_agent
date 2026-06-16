@@ -21,12 +21,24 @@ Routing rules:
 Respond with ONLY the agent name, nothing else."""
 
 
-def route_query(query: str, provider: str = "openai", model: str = None) -> str:
-    llm = get_llm(provider=provider, model=model, temperature=0, max_tokens=20)
-    messages = [
-        SystemMessage(content=ROUTING_PROMPT),
-        HumanMessage(content=query),
-    ]
+def route_query(
+    query: str,
+    provider: str = "openai",
+    model: str = None,
+    chat_history: list | None = None,
+    metric_ai_api_key: str = None,
+) -> str:
+    llm = get_llm(
+        provider=provider,
+        model=model,
+        temperature=0,
+        max_tokens=20,
+        metric_ai_api_key=metric_ai_api_key,
+    )
+    messages = [SystemMessage(content=ROUTING_PROMPT)]
+    if chat_history:
+        messages.extend(chat_history)
+    messages.append(HumanMessage(content=query))
     response = llm.invoke(messages)
     agent_name = response.content.strip().lower()
 

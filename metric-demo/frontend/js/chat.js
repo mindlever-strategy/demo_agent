@@ -5,12 +5,42 @@ let queryCount = 0;
 
 const PROVIDER_MODELS = {
     openai: ["gpt-4o-mini", "gpt-4o"],
-    anthropic: ["claude-sonnet-4-20250514"],
+    anthropic: ["claude-sonnet-4-6", "claude-haiku-4-5-20251001"],
     gemini: ["gemini-2.5-flash", "gemini-2.5-pro"],
     grok: ["grok-3-mini", "grok-3"],
 };
 
 const PROVIDER_NAMES = { openai: "OpenAI", anthropic: "Claude", gemini: "Gemini", grok: "Grok" };
+
+const WELCOME_HTML = `
+    <div class="welcome-container">
+        <div class="welcome-logo">
+            <svg width="44" height="44" viewBox="0 0 40 40" fill="none">
+                <rect width="40" height="40" rx="10" fill="#c4a24a"/>
+                <path d="M12 28V18L17 22V28M17 28V14L23 18V28M23 28V12L29 16V28" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </div>
+        <h1 class="welcome-title">What can I help with?</h1>
+        <div class="welcome-suggestions">
+            <button class="suggestion-btn" data-query="Which clients are most profitable this quarter?">
+                <span class="suggestion-text">Which clients are most profitable?</span>
+                <svg class="suggestion-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17l9.2-9.2M17 17V7.8H7.8"/></svg>
+            </button>
+            <button class="suggestion-btn" data-query="What are the latest market trends in AI?">
+                <span class="suggestion-text">Latest market trends in AI?</span>
+                <svg class="suggestion-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17l9.2-9.2M17 17V7.8H7.8"/></svg>
+            </button>
+            <button class="suggestion-btn" data-query="Generate an executive summary of Q4 performance.">
+                <span class="suggestion-text">Generate executive summary</span>
+                <svg class="suggestion-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17l9.2-9.2M17 17V7.8H7.8"/></svg>
+            </button>
+            <button class="suggestion-btn" data-query="Write a Python function to merge two sorted arrays.">
+                <span class="suggestion-text">Write a merge function in Python</span>
+                <svg class="suggestion-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17l9.2-9.2M17 17V7.8H7.8"/></svg>
+            </button>
+        </div>
+    </div>
+`;
 
 document.addEventListener("DOMContentLoaded", () => {
     const stored = sessionStorage.getItem("user");
@@ -40,6 +70,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const sidebarToggleBtn = document.getElementById("sidebarToggleBtn");
     const sidebarCloseBtn = document.getElementById("sidebarCloseBtn");
     const metricApiKeyInput = document.getElementById("metricApiKeyInput");
+    const clearChatBtn = document.getElementById("clearChatBtn");
+    const headerClearChatBtn = document.getElementById("headerClearChatBtn");
+    const chatMessages = document.getElementById("chatMessages");
 
     // Both side panels start open
     tracePanel.classList.add("open");
@@ -98,13 +131,17 @@ document.addEventListener("DOMContentLoaded", () => {
         tracePanel.classList.remove("open");
     });
 
-    // Suggestion buttons
-    document.querySelectorAll(".suggestion-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-            messageInput.value = btn.dataset.query;
-            autoResize(messageInput);
-            chatForm.dispatchEvent(new Event("submit"));
-        });
+    const handleClearChat = () => clearChat(chatForm, messageInput, sendBtn);
+    clearChatBtn.addEventListener("click", handleClearChat);
+    headerClearChatBtn.addEventListener("click", handleClearChat);
+
+    chatMessages.addEventListener("click", (e) => {
+        const btn = e.target.closest(".suggestion-btn");
+        if (!btn) return;
+        messageInput.value = btn.dataset.query;
+        autoResize(messageInput);
+        sendBtn.disabled = false;
+        chatForm.dispatchEvent(new Event("submit"));
     });
 
     // Logout
@@ -178,6 +215,7 @@ document.addEventListener("DOMContentLoaded", () => {
             let fullContent = "";
             let metaData = null;
             let doneData = null;
+            let streamError = null;
 
             while (true) {
                 const { done, value } = await reader.read();
@@ -201,10 +239,20 @@ document.addEventListener("DOMContentLoaded", () => {
                             updateStreamingBubble(streamBubble, fullContent);
                         } else if (currentEvent === "done") {
                             doneData = data;
+                        } else if (currentEvent === "error") {
+                            streamError = data.error;
                         }
                         currentEvent = null;
                     }
                 }
+            }
+
+            if (streamError) {
+                finalizeStreamingMessage(streamBubble, streamError, null);
+                setAgentState("idle", "Error", "", "");
+                sendBtn.disabled = false;
+                messageInput.focus();
+                return;
             }
 
             queryCount++;
@@ -231,6 +279,12 @@ function autoResize(el) {
     el.style.height = Math.min(el.scrollHeight, 200) + "px";
 }
 
+function typingDotsHtml() {
+    return '<div class="typing-indicator" aria-label="Thinking"><span></span><span></span><span></span></div>';
+}
+
+const MIN_TYPING_MS = 500;
+
 function updateModelOptions(provider) {
     const modelSelect = document.getElementById("modelSelect");
     const models = PROVIDER_MODELS[provider] || PROVIDER_MODELS.openai;
@@ -253,6 +307,47 @@ function removeWelcome() {
         welcome.style.transition = "opacity 0.2s ease";
         welcome.style.opacity = "0";
         setTimeout(() => welcome.remove(), 200);
+    }
+}
+
+function showWelcome() {
+    const chatMessages = document.getElementById("chatMessages");
+    chatMessages.innerHTML = WELCOME_HTML;
+}
+
+async function clearChat(chatForm, messageInput, sendBtn) {
+    if (!confirm("Clear this conversation and start a new session?")) {
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_BASE}/api/clear-chat`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user_id: user.user_id }),
+        });
+
+        if (!res.ok) {
+            alert("Could not start a new session. Please try again.");
+            return;
+        }
+
+        const data = await res.json();
+        user.session_id = data.session_id;
+        sessionStorage.setItem("user", JSON.stringify(user));
+
+        queryCount = 0;
+        document.getElementById("sessionId").textContent = user.session_id;
+        document.getElementById("queryCount").textContent = "0";
+        setAgentState("idle", "Awaiting query...", "", "");
+
+        showWelcome();
+        messageInput.value = "";
+        autoResize(messageInput);
+        sendBtn.disabled = true;
+        loadTraces();
+    } catch (err) {
+        alert("Connection error. Is the server running?");
     }
 }
 
@@ -289,28 +384,67 @@ function appendMessage(role, content, traceData) {
 function appendStreamingMessage() {
     const chatMessages = document.getElementById("chatMessages");
     const msg = document.createElement("div");
-    msg.className = "message message-agent message-streaming";
+    msg.className = "message message-agent message-streaming message-waiting";
+    msg.dataset.typingStarted = String(Date.now());
     msg.innerHTML = `
         <div class="message-meta" style="display:none"></div>
-        <div class="message-bubble"><span class="streaming-cursor"></span></div>
+        <div class="message-bubble">${typingDotsHtml()}</div>
         <div class="trace-accordion-container"></div>
     `;
     chatMessages.appendChild(msg);
     chatMessages.scrollTop = chatMessages.scrollHeight;
+    requestAnimationFrame(() => {
+        msg.scrollIntoView({ behavior: "smooth", block: "end" });
+    });
     return msg;
 }
 
 function updateStreamingBubble(msgEl, content) {
     const bubble = msgEl.querySelector(".message-bubble");
-    bubble.innerHTML = formatContent(content) + '<span class="streaming-cursor"></span>';
-    const chatMessages = document.getElementById("chatMessages");
-    chatMessages.scrollTop = chatMessages.scrollHeight;
+    if (!content) {
+        bubble.innerHTML = typingDotsHtml();
+        msgEl.classList.add("message-waiting");
+        return;
+    }
+
+    msgEl.dataset.streamContent = content;
+
+    const renderContent = () => {
+        const latest = msgEl.dataset.streamContent || content;
+        msgEl.classList.remove("message-waiting");
+        delete msgEl.dataset.typingTimer;
+        bubble.innerHTML = formatContent(latest) + '<span class="streaming-cursor"></span>';
+        const chatMessages = document.getElementById("chatMessages");
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    };
+
+    if (!msgEl.classList.contains("message-waiting")) {
+        renderContent();
+        return;
+    }
+
+    if (msgEl.dataset.typingTimer) {
+        return;
+    }
+
+    const startedAt = Number(msgEl.dataset.typingStarted || Date.now());
+    const delay = Math.max(0, MIN_TYPING_MS - (Date.now() - startedAt));
+
+    if (delay > 0) {
+        msgEl.dataset.typingTimer = String(setTimeout(renderContent, delay));
+    } else {
+        renderContent();
+    }
 }
 
 function finalizeStreamingMessage(msgEl, content, traceData) {
-    msgEl.classList.remove("message-streaming");
+    if (msgEl.dataset.typingTimer) {
+        clearTimeout(Number(msgEl.dataset.typingTimer));
+        delete msgEl.dataset.typingTimer;
+    }
+    msgEl.classList.remove("message-streaming", "message-waiting");
     const bubble = msgEl.querySelector(".message-bubble");
-    bubble.innerHTML = formatContent(content);
+    bubble.innerHTML = formatContent(msgEl.dataset.streamContent || content);
 
     if (traceData) {
         const metaEl = msgEl.querySelector(".message-meta");

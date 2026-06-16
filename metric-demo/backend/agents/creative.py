@@ -1,5 +1,5 @@
-from langchain_core.messages import SystemMessage, HumanMessage
 from providers import get_llm
+from agents.messages import with_system_prompt
 
 
 CREATIVE_PROMPT = """You are a Creative Agent working inside an enterprise AI system.
@@ -16,22 +16,16 @@ Offer multiple options when appropriate.
 Keep responses under 200 words."""
 
 
-def execute(query: str, user_id: str, provider: str = "openai", model: str = None) -> str:
-    llm = get_llm(provider=provider, model=model, temperature=0.8, max_tokens=500)
-    messages = [
-        SystemMessage(content=CREATIVE_PROMPT),
-        HumanMessage(content=f"User ({user_id}) asks: {query}"),
-    ]
+def execute(chat_messages: list, user_id: str, provider: str = "openai", model: str = None, metric_ai_api_key: str = None) -> str:
+    llm = get_llm(provider=provider, model=model, temperature=0.8, max_tokens=500, metric_ai_api_key=metric_ai_api_key)
+    messages = with_system_prompt(CREATIVE_PROMPT, chat_messages)
     response = llm.invoke(messages)
     return response.content
 
 
-def stream_execute(query: str, user_id: str, provider: str = "openai", model: str = None):
-    llm = get_llm(provider=provider, model=model, temperature=0.8, max_tokens=500, streaming=True)
-    messages = [
-        SystemMessage(content=CREATIVE_PROMPT),
-        HumanMessage(content=f"User ({user_id}) asks: {query}"),
-    ]
+def stream_execute(chat_messages: list, user_id: str, provider: str = "openai", model: str = None, metric_ai_api_key: str = None):
+    llm = get_llm(provider=provider, model=model, temperature=0.8, max_tokens=500, streaming=True, metric_ai_api_key=metric_ai_api_key)
+    messages = with_system_prompt(CREATIVE_PROMPT, chat_messages)
     for chunk in llm.stream(messages):
         if chunk.content:
             yield chunk.content

@@ -102,7 +102,7 @@ Response + execution trace returned to UI
 ## Running
 
 ```bash
-cd metric-demo/backend
+cd "c:\Users\kumar\OneDrive\Desktop\demo_agent\metric-demo\backend"; python -m uvicorn main:app --host 127.0.0.1 --port 8000 2>&1
 ```
 
 Open `http://localhost:8000` in your browser.

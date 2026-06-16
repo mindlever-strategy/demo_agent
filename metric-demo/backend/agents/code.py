@@ -1,5 +1,5 @@
-from langchain_core.messages import SystemMessage, HumanMessage
 from providers import get_llm
+from agents.messages import with_system_prompt
 
 
 CODE_PROMPT = """You are a Code Agent working inside an enterprise AI system.
@@ -16,22 +16,16 @@ Always specify the language and keep code concise but complete.
 Keep responses under 250 words."""
 
 
-def execute(query: str, user_id: str, provider: str = "openai", model: str = None) -> str:
-    llm = get_llm(provider=provider, model=model, temperature=0.2, max_tokens=600)
-    messages = [
-        SystemMessage(content=CODE_PROMPT),
-        HumanMessage(content=f"User ({user_id}) asks: {query}"),
-    ]
+def execute(chat_messages: list, user_id: str, provider: str = "openai", model: str = None, metric_ai_api_key: str = None) -> str:
+    llm = get_llm(provider=provider, model=model, temperature=0.2, max_tokens=600, metric_ai_api_key=metric_ai_api_key)
+    messages = with_system_prompt(CODE_PROMPT, chat_messages)
     response = llm.invoke(messages)
     return response.content
 
 
-def stream_execute(query: str, user_id: str, provider: str = "openai", model: str = None):
-    llm = get_llm(provider=provider, model=model, temperature=0.2, max_tokens=600, streaming=True)
-    messages = [
-        SystemMessage(content=CODE_PROMPT),
-        HumanMessage(content=f"User ({user_id}) asks: {query}"),
-    ]
+def stream_execute(chat_messages: list, user_id: str, provider: str = "openai", model: str = None, metric_ai_api_key: str = None):
+    llm = get_llm(provider=provider, model=model, temperature=0.2, max_tokens=600, streaming=True, metric_ai_api_key=metric_ai_api_key)
+    messages = with_system_prompt(CODE_PROMPT, chat_messages)
     for chunk in llm.stream(messages):
         if chunk.content:
             yield chunk.content
